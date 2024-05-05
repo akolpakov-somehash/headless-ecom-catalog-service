@@ -1,7 +1,7 @@
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
-github.com/akolpakov-somehash/go-microservices v0.0.0-20240421134057-6236e1dfa8b4 h1:iTcKd1UyDB7uJS7C1U8ZY9kx5QfUOdQmz4X9/mJSlXo=
-github.com/akolpakov-somehash/go-microservices v0.0.0-20240421134057-6236e1dfa8b4/go.mod h1:eGpFD/5y71OG7vZyBsZkzfD4Jg5oCZ21jh+VbQHPAwM=
+github.com/akolpakov-somehash/headless-ecom-protos v0.0.0-20240505171248-648d23063307 h1:HlGVrpyKxxkU4vGQWn5N2YojPGhHOP+I1pF6IzvwYu8=
+github.com/akolpakov-somehash/headless-ecom-protos v0.0.0-20240505171248-648d23063307/go.mod h1:ob9oWAaA7dzQo1JiqRuQjnrVu7ijILP8bdk6vSN95jE=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/go-sql-driver/mysql v1.7.0/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
