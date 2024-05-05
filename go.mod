@@ -3,7 +3,7 @@ module catalog
 go 1.22.2
 
 require (
-	github.com/akolpakov-somehash/go-microservices v0.0.0-20240421134057-6236e1dfa8b4
+	github.com/akolpakov-somehash/headless-ecom-protos v0.0.0-20240505171248-648d23063307
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/grpc v1.63.2

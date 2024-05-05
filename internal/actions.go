@@ -6,7 +6,7 @@ import (
 	"log"
 	"sync"
 
-	pb "github.com/akolpakov-somehash/go-microservices/proto/catalog/product"
+	pb "github.com/akolpakov-somehash/headless-ecom-protos/gen/go/catalog"
 	"gorm.io/gorm"
 )
 
