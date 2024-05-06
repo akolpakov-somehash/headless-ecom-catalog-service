@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	pb "github.com/akolpakov-somehash/go-microservices/proto/catalog/product"
+	pb "github.com/akolpakov-somehash/headless-ecom-protos/gen/go/catalog"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
@@ -21,7 +21,7 @@ import (
 func loadEnv() error {
 	// Load environment variables from .env file
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) { //For docker run we don't have the file
 		return fmt.Errorf("error loading .env file: %v", err)
 	}
 	return nil
