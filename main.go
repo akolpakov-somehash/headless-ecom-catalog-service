@@ -21,7 +21,7 @@ import (
 func loadEnv() error {
 	// Load environment variables from .env file
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) { //For docker run we don't have the file
 		return fmt.Errorf("error loading .env file: %v", err)
 	}
 	return nil
