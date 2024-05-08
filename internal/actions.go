@@ -68,9 +68,10 @@ func (s *Server) GetProductList(ctx context.Context, in *pb.Empty) (*pb.ProductL
 		wg.Add(1)
 		go func(product *DbProduct) {
 			defer wg.Done()
-			defer mu.Unlock()
 
 			mu.Lock()
+			defer mu.Unlock()
+
 			protoProducts[product.ID] = productToProto(product)
 		}(product)
 	}

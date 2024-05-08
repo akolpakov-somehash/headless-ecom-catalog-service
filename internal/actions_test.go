@@ -97,7 +97,7 @@ func TestServer_UpdateProductInfo(t *testing.T) {
 			name: "Update a product with an error",
 			product: &pb.Product{
 				Id: 1,
-			}, // empty product
+			},
 			expectedErr:    fmt.Errorf("failed to update product: %w", gorm.ErrInvalidData),
 			expecterResult: nil,
 			setup: func(p *DbProduct) *ProductServiceMock {
@@ -139,5 +139,195 @@ func TestServer_UpdateProductInfo(t *testing.T) {
 			assert.Nil(t, err)
 		}
 		assert.Equal(t, tc.expecterResult, res)
+	}
+}
+
+func TestServer_DeleteProduct(t *testing.T) {
+	// given
+	testCases := []struct {
+		name           string
+		productId      *pb.ProductId
+		expectedResult *pb.Empty
+		expectedErr    error
+		setup          func(id uint64) *ProductServiceMock
+	}{
+		{
+			name: "Delete a product",
+			productId: &pb.ProductId{
+				Id: 1,
+			},
+			expectedResult: new(pb.Empty),
+			expectedErr:    nil,
+			setup: func(id uint64) *ProductServiceMock {
+				mockProductService := new(ProductServiceMock)
+				mockProductService.On("DeleteProductByID", id).Return(nil)
+				return mockProductService
+			},
+		},
+		{
+			name: "Delete a product with an error",
+			productId: &pb.ProductId{
+				Id: 1,
+			},
+			expectedResult: nil,
+			expectedErr:    gorm.ErrRecordNotFound,
+			setup: func(id uint64) *ProductServiceMock {
+				mockProductService := new(ProductServiceMock)
+				mockProductService.On("DeleteProductByID", id).Return(gorm.ErrRecordNotFound)
+				return mockProductService
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		// when
+		mockProductService := tc.setup(tc.productId.Id)
+		server := &Server{
+			ProductService: mockProductService,
+		}
+
+		ctx := context.Background()
+		res, err := server.DeleteProduct(ctx, tc.productId)
+
+		// then
+		assert.Equal(t, tc.expectedErr, err)
+		assert.Equal(t, tc.expectedResult, res)
+	}
+}
+
+func TestServer_GetProductInfo(t *testing.T) {
+	// given
+	testCases := []struct {
+		name           string
+		productId      *pb.ProductId
+		expectedResult *pb.Product
+		expectedErr    error
+		setup          func(p *DbProduct) *ProductServiceMock
+	}{
+		{
+			name: "Get a product",
+			productId: &pb.ProductId{
+				Id: 1,
+			},
+			expectedResult: &pb.Product{
+				Id:          1,
+				Name:        "Test Product",
+				Sku:         "test-sku",
+				Description: "Test Description",
+				Price:       100.0,
+				Image:       "test-image",
+			},
+			expectedErr: nil,
+			setup: func(p *DbProduct) *ProductServiceMock {
+				mockProductService := new(ProductServiceMock)
+				mockProductService.On("GetProductByID", p.ID).Return(p, nil)
+				return mockProductService
+			},
+		},
+		{
+			name: "Get a product with an error",
+			productId: &pb.ProductId{
+				Id: 2,
+			},
+			expectedResult: nil,
+			expectedErr:    fmt.Errorf("product not found: failed to get a product 2: record not found"),
+			setup: func(p *DbProduct) *ProductServiceMock {
+				mockProductService := new(ProductServiceMock)
+				mockProductService.On("GetProductByID", p.ID).Return(nil, fmt.Errorf("failed to get a product %d: %w", p.ID, gorm.ErrRecordNotFound))
+				return mockProductService
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		// when
+		var mockProductService *ProductServiceMock
+		if tc.expectedResult != nil {
+			mockProductService = tc.setup(protoToProduct(tc.expectedResult))
+		} else {
+			mockProductService = tc.setup(protoToProduct(&pb.Product{Id: tc.productId.Id}))
+		}
+		server := &Server{
+			ProductService: mockProductService,
+		}
+
+		ctx := context.Background()
+		res, err := server.GetProductInfo(ctx, tc.productId)
+
+		// then
+		if tc.expectedErr != nil {
+			assert.Equal(t, tc.expectedErr.Error(), err.Error())
+		} else {
+			assert.Nil(t, err)
+		}
+		assert.Equal(t, tc.expectedResult, res)
+	}
+}
+
+func TestServer_GetProductList(t *testing.T) {
+	// given
+	testCases := []struct {
+		name           string
+		expectedResult *pb.ProductList
+		expectedErr    error
+		setup          func() *ProductServiceMock
+	}{
+		{
+			name: "Get a product list",
+			expectedResult: &pb.ProductList{
+				Products: map[uint64]*pb.Product{
+					1: {
+						Id:          1,
+						Name:        "Test Product",
+						Sku:         "test-sku",
+						Description: "Test Description",
+						Price:       100.0,
+						Image:       "test-image",
+					},
+				},
+			},
+			expectedErr: nil,
+			setup: func() *ProductServiceMock {
+				mockProductService := new(ProductServiceMock)
+				mockProductService.On("GetAllProducts").Return([]*DbProduct{{
+					ID:          1,
+					Name:        "Test Product",
+					Sku:         "test-sku",
+					Description: "Test Description",
+					Price:       100.0,
+					Image:       "test-image",
+				}}, nil)
+				return mockProductService
+			},
+		},
+		{
+			name:           "Get a product list with an error",
+			expectedResult: nil,
+			expectedErr:    fmt.Errorf("failed to obtain product list: %w", gorm.ErrInvalidData),
+			setup: func() *ProductServiceMock {
+				mockProductService := new(ProductServiceMock)
+				mockProductService.On("GetAllProducts").Return(nil, gorm.ErrInvalidData)
+				return mockProductService
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		// when
+		mockProductService := tc.setup()
+		server := &Server{
+			ProductService: mockProductService,
+		}
+
+		ctx := context.Background()
+		res, err := server.GetProductList(ctx, new(pb.Empty))
+
+		// then
+		if tc.expectedErr != nil {
+			assert.Equal(t, tc.expectedErr.Error(), err.Error())
+		} else {
+			assert.Nil(t, err)
+		}
+		assert.Equal(t, tc.expectedResult, res)
 	}
 }

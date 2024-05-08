@@ -258,3 +258,12 @@ func TestProductService_GetAllProducts(t *testing.T) {
 		})
 	}
 }
+
+func TestDbProduct_TableName(t *testing.T) {
+	// given
+	dbProduct := DbProduct{}
+	//when
+	tableName := dbProduct.TableName()
+	//then
+	assert.Equal(t, "catalog_products", tableName)
+}

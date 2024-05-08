@@ -63,5 +63,8 @@ func (p *ProductServiceMock) DeleteProductByID(id uint64) error {
 
 func (p *ProductServiceMock) GetAllProducts() ([]*DbProduct, error) {
 	args := p.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).([]*DbProduct), args.Error(1)
 }
