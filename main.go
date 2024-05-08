@@ -61,7 +61,8 @@ func startServer(db *gorm.DB, port int) error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterProductInfoServer(s, &internal.Server{DB: db})
+	productService := &internal.ProductService{DB: db}
+	pb.RegisterProductInfoServer(s, &internal.Server{ProductService: productService})
 	log.Printf("server listening at %v", lis.Addr())
 	return s.Serve(lis)
 }

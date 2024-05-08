@@ -24,9 +24,29 @@ const (
 	ErrorId = 0
 )
 
+type DbWrapper interface {
+	Create(interface{}) *gorm.DB
+	First(interface{}, ...interface{}) *gorm.DB
+	Save(interface{}) *gorm.DB
+	Delete(interface{}, ...interface{}) *gorm.DB
+	Find(interface{}, ...interface{}) *gorm.DB
+}
+
+type ProductServiceInterface interface {
+	CreateProduct(product *DbProduct) (uint64, error)
+	GetProductByID(id uint64) (*DbProduct, error)
+	UpdateProduct(product *DbProduct) error
+	DeleteProductByID(id uint64) error
+	GetAllProducts() ([]*DbProduct, error)
+}
+
+type ProductService struct {
+	DB DbWrapper
+}
+
 // Create a new DbProduct
-func CreateProduct(db *gorm.DB, product *DbProduct) (uint64, error) {
-	result := db.Create(product)
+func (p *ProductService) CreateProduct(product *DbProduct) (uint64, error) {
+	result := p.DB.Create(product)
 	if result.Error != nil {
 		return ErrorId, fmt.Errorf("failed to create a product: %w", result.Error)
 	}
@@ -34,9 +54,9 @@ func CreateProduct(db *gorm.DB, product *DbProduct) (uint64, error) {
 }
 
 // Read a DbProduct by ID
-func GetProductByID(db *gorm.DB, id uint64) (*DbProduct, error) {
-	var product DbProduct
-	result := db.First(&product, id)
+func (p *ProductService) GetProductByID(id uint64) (*DbProduct, error) {
+	product := DbProduct{}
+	result := p.DB.First(&product, id)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get a product %d: %w", id, result.Error)
 	}
@@ -44,8 +64,8 @@ func GetProductByID(db *gorm.DB, id uint64) (*DbProduct, error) {
 }
 
 // Update a DbProduct
-func UpdateProduct(db *gorm.DB, product *DbProduct) error {
-	result := db.Save(product)
+func (p *ProductService) UpdateProduct(product *DbProduct) error {
+	result := p.DB.Save(product)
 	if result.Error != nil {
 		return fmt.Errorf("failed to update a product %d: %w", product.ID, result.Error)
 	}
@@ -53,18 +73,18 @@ func UpdateProduct(db *gorm.DB, product *DbProduct) error {
 }
 
 // Delete a DbProduct by ID
-func DeleteProductByID(db *gorm.DB, id uint64) error {
-	result := db.Delete(&DbProduct{}, id)
+func (p *ProductService) DeleteProductByID(id uint64) error {
+	result := p.DB.Delete(&DbProduct{}, id)
 	if result.Error != nil {
-		return fmt.Errorf("failed to delet a product %d: %w", id, result.Error)
+		return fmt.Errorf("failed to delete a product %d: %w", id, result.Error)
 	}
 	return nil
 }
 
 // Get all DbProducts
-func GetAllProducts(db *gorm.DB) ([]*DbProduct, error) {
+func (p *ProductService) GetAllProducts() ([]*DbProduct, error) {
 	var products []*DbProduct
-	result := db.Find(&products)
+	result := p.DB.Find(&products)
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to get products: %w", result.Error)
 	}
