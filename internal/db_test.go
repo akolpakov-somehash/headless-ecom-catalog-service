@@ -8,42 +8,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type DbWrapperMock struct {
-	mock.Mock
-}
-
-func (d *DbWrapperMock) Create(value interface{}) *gorm.DB {
-	args := d.Called(value)
-	return args.Get(0).(*gorm.DB)
-}
-
-func (d *DbWrapperMock) First(dest interface{}, conds ...interface{}) *gorm.DB {
-	args := d.Called(dest, conds)
-	return args.Get(0).(*gorm.DB)
-}
-
-func (d *DbWrapperMock) Save(value interface{}) *gorm.DB {
-	args := d.Called(value)
-	return args.Get(0).(*gorm.DB)
-}
-
-func (d *DbWrapperMock) Delete(value interface{}, conds ...interface{}) *gorm.DB {
-	args := d.Called(value, conds)
-	return args.Get(0).(*gorm.DB)
-}
-
-func (d *DbWrapperMock) Find(dest interface{}, conds ...interface{}) *gorm.DB {
-	args := d.Called(dest, conds)
-	return args.Get(0).(*gorm.DB)
-}
-
-func TestCreateProduct(t *testing.T) {
+func TestTestProductService_CreateProduct(t *testing.T) {
 	// given
 	productId := uint64(1)
 	tests := []struct {
 		name    string
 		product DbProduct
-		setup   func(p *DbProduct) *DbWrapperMock
+		setup   func(p *DbProduct) *ProductService
 		wantErr bool
 	}{
 		{
@@ -56,29 +27,29 @@ func TestCreateProduct(t *testing.T) {
 				Image:       "test.jpg",
 				ID:          productId, //have to set it manually
 			},
-			setup: func(p *DbProduct) *DbWrapperMock {
+			setup: func(p *DbProduct) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Create", p).Return(&gorm.DB{}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: false,
 		},
 		{
 			name:    "Create a new product with an error",
 			product: DbProduct{},
-			setup: func(p *DbProduct) *DbWrapperMock {
+			setup: func(p *DbProduct) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Create", p).Return(&gorm.DB{Error: gorm.ErrInvalidData}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dbWrapper := tt.setup(&tt.product)
+			ps := tt.setup(&tt.product)
 			//when
-			id, err := CreateProduct(dbWrapper, &tt.product)
+			id, err := ps.CreateProduct(&tt.product)
 			//then
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -91,38 +62,38 @@ func TestCreateProduct(t *testing.T) {
 	}
 }
 
-func TestGetProductByID(t *testing.T) {
+func TestProductService_GetProductByID(t *testing.T) {
 	// given
 	productID := uint64(1)
 	tests := []struct {
 		name    string
 		id      uint64
 		product DbProduct
-		setup   func(id uint64) *DbWrapperMock
+		setup   func(id uint64) *ProductService
 		wantErr bool
 	}{
 		{
 			name:    "Fetch existing product",
 			id:      productID,
 			product: DbProduct{ID: productID, Name: "Existing Product"},
-			setup: func(id uint64) *DbWrapperMock {
+			setup: func(id uint64) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("First", &DbProduct{}, []interface{}{id}).Run(func(args mock.Arguments) {
 					arg := args.Get(0).(*DbProduct)
 					arg.ID = id
 					arg.Name = "Existing Product"
 				}).Return(&gorm.DB{}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: false,
 		},
 		{
 			name: "Fetch non-existing product",
 			id:   productID,
-			setup: func(id uint64) *DbWrapperMock {
+			setup: func(id uint64) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("First", &DbProduct{}, []interface{}{id}).Return(&gorm.DB{Error: gorm.ErrRecordNotFound}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: true,
 		},
@@ -131,8 +102,8 @@ func TestGetProductByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//when
-			dbWrapper := tt.setup(tt.id)
-			product, err := GetProductByID(dbWrapper, tt.id)
+			ps := tt.setup(tt.id)
+			product, err := ps.GetProductByID(tt.id)
 			//then
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -144,32 +115,32 @@ func TestGetProductByID(t *testing.T) {
 	}
 }
 
-func TestUpdateProduct(t *testing.T) {
+func TestProductService_UpdateProduct(t *testing.T) {
 	// given
 	productID := uint64(1)
 	tests := []struct {
 		name    string
 		product DbProduct
-		setup   func(p *DbProduct) *DbWrapperMock
+		setup   func(p *DbProduct) *ProductService
 		wantErr bool
 	}{
 		{
 			name:    "Update existing product",
 			product: DbProduct{ID: productID, Name: "Updated Product"},
-			setup: func(p *DbProduct) *DbWrapperMock {
+			setup: func(p *DbProduct) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Save", p).Return(&gorm.DB{}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: false,
 		},
 		{
 			name:    "Update non-existing product",
 			product: DbProduct{ID: productID, Name: "Updated Product"},
-			setup: func(p *DbProduct) *DbWrapperMock {
+			setup: func(p *DbProduct) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Save", p).Return(&gorm.DB{Error: gorm.ErrRecordNotFound}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: true,
 		},
@@ -178,8 +149,8 @@ func TestUpdateProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//when
-			dbWrapper := tt.setup(&tt.product)
-			err := UpdateProduct(dbWrapper, &tt.product)
+			ps := tt.setup(&tt.product)
+			err := ps.UpdateProduct(&tt.product)
 			//then
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -190,32 +161,32 @@ func TestUpdateProduct(t *testing.T) {
 	}
 }
 
-func TestDeleteProductByID(t *testing.T) {
+func TestProductService_DeleteProductByID(t *testing.T) {
 	// given
 	productID := uint64(1)
 	tests := []struct {
 		name      string
 		productID uint64
-		setup     func(id uint64) *DbWrapperMock
+		setup     func(id uint64) *ProductService
 		wantErr   bool
 	}{
 		{
 			name:      "Delete existing product",
 			productID: productID,
-			setup: func(id uint64) *DbWrapperMock {
+			setup: func(id uint64) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Delete", &DbProduct{}, []interface{}{id}).Return(&gorm.DB{}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: false,
 		},
 		{
 			name:      "Delete non-existing product",
 			productID: productID,
-			setup: func(id uint64) *DbWrapperMock {
+			setup: func(id uint64) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Delete", &DbProduct{}, []interface{}{id}).Return(&gorm.DB{Error: gorm.ErrRecordNotFound}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: true,
 		},
@@ -224,8 +195,8 @@ func TestDeleteProductByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//when
-			dbWrapper := tt.setup(tt.productID)
-			err := DeleteProductByID(dbWrapper, tt.productID)
+			ps := tt.setup(tt.productID)
+			err := ps.DeleteProductByID(tt.productID)
 			//then
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -236,12 +207,12 @@ func TestDeleteProductByID(t *testing.T) {
 	}
 }
 
-func TestGetAllProducts(t *testing.T) {
+func TestProductService_GetAllProducts(t *testing.T) {
 	// given
 	tests := []struct {
 		name     string
 		products []*DbProduct
-		setup    func(ps []*DbProduct) *DbWrapperMock
+		setup    func(ps []*DbProduct) *ProductService
 		wantErr  bool
 	}{
 		{
@@ -250,22 +221,22 @@ func TestGetAllProducts(t *testing.T) {
 				{ID: 1, Name: "Product 1"},
 				{ID: 2, Name: "Product 2"},
 			},
-			setup: func(ps []*DbProduct) *DbWrapperMock {
+			setup: func(ps []*DbProduct) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Find", mock.AnythingOfType("*[]*internal.DbProduct"), mock.Anything).Run(func(args mock.Arguments) {
 					arg := args.Get(0).(*[]*DbProduct)
 					*arg = ps
 				}).Return(&gorm.DB{}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: false,
 		},
 		{
 			name: "Fetch all products with an error",
-			setup: func(ps []*DbProduct) *DbWrapperMock {
+			setup: func(ps []*DbProduct) *ProductService {
 				dbWrapper := new(DbWrapperMock)
 				dbWrapper.On("Find", mock.AnythingOfType("*[]*internal.DbProduct"), mock.Anything).Return(&gorm.DB{Error: gorm.ErrInvalidData}).Once()
-				return dbWrapper
+				return &ProductService{DB: dbWrapper}
 			},
 			wantErr: true,
 		},
@@ -274,8 +245,8 @@ func TestGetAllProducts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//when
-			dbWrapper := tt.setup(tt.products)
-			products, err := GetAllProducts(dbWrapper)
+			ps := tt.setup(tt.products)
+			products, err := ps.GetAllProducts()
 			//then
 			if tt.wantErr {
 				assert.Error(t, err)

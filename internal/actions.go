@@ -7,17 +7,16 @@ import (
 	"sync"
 
 	pb "github.com/akolpakov-somehash/headless-ecom-protos/gen/go/catalog"
-	"gorm.io/gorm"
 )
 
 type Server struct {
-	DB *gorm.DB
+	ProductService ProductServiceInterface
 	pb.UnimplementedProductInfoServer
 }
 
 func (s *Server) AddProduct(ctx context.Context, in *pb.Product) (*pb.ProductId, error) {
 	dbProduct := protoToProduct(in)
-	id, err := CreateProduct(s.DB, dbProduct)
+	id, err := s.ProductService.CreateProduct(dbProduct)
 	if err != nil {
 		log.Printf("Failed to add product %v : %v. Error: %v", id, in.Name, err)
 		return nil, fmt.Errorf("failed to add product: %w", err)
@@ -26,13 +25,13 @@ func (s *Server) AddProduct(ctx context.Context, in *pb.Product) (*pb.ProductId,
 	return &pb.ProductId{Id: id}, nil
 }
 
-func (s *Server) UpdataProduct(ctx context.Context, in *pb.Product) (*pb.Empty, error) {
-	if _, exists := GetProductByID(s.DB, in.Id); exists != nil {
+func (s *Server) UpdateProduct(ctx context.Context, in *pb.Product) (*pb.Empty, error) {
+	if _, exists := s.ProductService.GetProductByID(in.Id); exists != nil {
 		log.Printf("Failed to find product %v : %v. Error: %v", in.Id, in.Name, exists)
 		return nil, fmt.Errorf("product not found: %w", exists)
 	}
 	updatedProduct := protoToProduct(in)
-	if err := UpdateProduct(s.DB, updatedProduct); err != nil {
+	if err := s.ProductService.UpdateProduct(updatedProduct); err != nil {
 		log.Printf("Failed to update product %v : %v. Error: %v", in.Id, in.Name, err)
 		return nil, fmt.Errorf("failed to update product: %w", err)
 	}
@@ -41,14 +40,14 @@ func (s *Server) UpdataProduct(ctx context.Context, in *pb.Product) (*pb.Empty, 
 }
 
 func (s *Server) DeleteProduct(ctx context.Context, in *pb.ProductId) (*pb.Empty, error) {
-	if err := DeleteProductByID(s.DB, in.Id); err != nil {
+	if err := s.ProductService.DeleteProductByID(in.Id); err != nil {
 		return nil, err
 	}
 	return new(pb.Empty), nil
 }
 
 func (s *Server) GetProductInfo(ctx context.Context, in *pb.ProductId) (*pb.Product, error) {
-	dbProduct, err := GetProductByID(s.DB, in.Id)
+	dbProduct, err := s.ProductService.GetProductByID(in.Id)
 	if err != nil {
 		log.Printf("Failed to find product %v. Error: %v", in.Id, err)
 		return nil, fmt.Errorf("product not found: %w", err)
@@ -57,7 +56,7 @@ func (s *Server) GetProductInfo(ctx context.Context, in *pb.ProductId) (*pb.Prod
 }
 
 func (s *Server) GetProductList(ctx context.Context, in *pb.Empty) (*pb.ProductList, error) {
-	dbProducts, err := GetAllProducts(s.DB)
+	dbProducts, err := s.ProductService.GetAllProducts()
 	if err != nil {
 		log.Printf("Failed to obtain product list. Error: %v", err)
 		return nil, fmt.Errorf("failed to obtain product list: %w", err)
